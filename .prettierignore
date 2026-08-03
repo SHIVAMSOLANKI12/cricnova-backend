@@ -1,0 +1,7 @@
+# Ignore artifacts & dependencies
+node_modules
+dist
+coverage
+logs
+*.log
+package-lock.json
