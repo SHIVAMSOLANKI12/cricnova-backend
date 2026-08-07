@@ -16,6 +16,7 @@
  */
 
 import { z } from 'zod';
+import otpConfig from '../../../config/otp.config.js';
 
 /**
  * -------------------------------------------------------------------------
@@ -35,8 +36,8 @@ const phoneSchema = z
 const otpSchema = z
   .string()
   .trim()
-  .length(6, 'OTP must be exactly 6 digits.')
-  .regex(/^\d{6}$/, 'OTP must contain only digits.');
+  .length(otpConfig.length, `OTP must be exactly ${otpConfig.length} digits.`)
+  .regex(/^\d+$/, 'OTP must contain only digits.');
 
 /**
  * -------------------------------------------------------------------------
