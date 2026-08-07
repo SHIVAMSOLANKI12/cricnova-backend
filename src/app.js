@@ -1,31 +1,106 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const cookieParser = require('cookie-parser');
-const morgan = require('morgan');
-const config = require('./config');
-const routes = require('./routes');
-const logger = require('./core/logger');
+/**
+ * -----------------------------------------------------------------------------
+ * File: app.js
+ * Description:
+ * Enterprise Express Application Configuration & Global Middleware Pipeline
+ *
+ * Responsibilities:
+ * - Trust Proxy & Proxy Hardening
+ * - Request Tracing & Correlation ID Tracking
+ * - Security Headers via Helmet & Fingerprint Stripping
+ * - Hardened CORS Policies
+ * - Request Compression & Body Parsing
+ * - Structured HTTP Request Logging
+ * - API Versioning Route Mounting (/api/v1)
+ * - 404 & Centralized Error Middleware
+ * -----------------------------------------------------------------------------
+ */
+
+import express from 'express';
+import crypto from 'crypto';
+import helmet from 'helmet';
+import cors from 'cors';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
+
+// Environment Configuration
+import env from './config/env.js';
+
+// Logger & Custom Middlewares
+import logger from './common/logger/winston.js';
+import notFound from './common/middleware/not-found.js';
+import errorHandler from './common/middleware/error-handler.js';
+
+// Routes Imports
+import authRoutes from './modules/auth/routes/auth.routes.js';
 
 const app = express();
 
-// Security HTTP headers
+/**
+ * --------------------------------------------------------------------------
+ * 1. Proxy Hardening & Server Fingerprint Stripping
+ * --------------------------------------------------------------------------
+ */
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+/**
+ * --------------------------------------------------------------------------
+ * 2. Request Correlation ID Middleware
+ * --------------------------------------------------------------------------
+ */
+app.use((req, res, next) => {
+  req.id = req.headers['x-request-id'] || crypto.randomUUID();
+  res.setHeader('X-Request-ID', req.id);
+  next();
+});
+
+/**
+ * --------------------------------------------------------------------------
+ * 3. Security HTTP Headers (Helmet)
+ * --------------------------------------------------------------------------
+ */
 app.use(helmet());
 
-// Enable CORS
-app.use(cors({ origin: config.cors.origin, credentials: true }));
+/**
+ * --------------------------------------------------------------------------
+ * 4. Cross-Origin Resource Sharing (CORS)
+ * --------------------------------------------------------------------------
+ */
+const allowedOrigins = ['http://localhost:3000'];
 
-// Request parsing
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or Postman)
+      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS policy violation: Access denied.'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-ID'],
+  })
+);
+
+/**
+ * --------------------------------------------------------------------------
+ * 5. Request Parsing & Compression
+ * --------------------------------------------------------------------------
+ */
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
-
-// Gzip compression
 app.use(compression());
 
-// HTTP Request Logging
-const morganFormat = config.env === 'production' ? 'combined' : 'dev';
+/**
+ * --------------------------------------------------------------------------
+ * 6. HTTP Request Logging (Morgan -> Winston Stream)
+ * --------------------------------------------------------------------------
+ */
+const morganFormat = env.NODE_ENV === 'production' ? 'combined' : 'dev';
 app.use(
   morgan(morganFormat, {
     stream: {
@@ -34,38 +109,42 @@ app.use(
   })
 );
 
-// Root Health Check Route
+/**
+ * --------------------------------------------------------------------------
+ * 7. Health Check Endpoint
+ * --------------------------------------------------------------------------
+ */
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'CricNova API Foundation is healthy',
+  return res.status(200).json({
+    success: true,
+    message: 'CricNova Engine Backend is running healthy.',
+    environment: env.NODE_ENV,
     timestamp: new Date().toISOString(),
-    env: config.env,
+    uptime: `${Math.floor(process.uptime())}s`,
   });
 });
 
-// API Routes Mounting
-app.use(config.apiPrefix, routes);
+/**
+ * --------------------------------------------------------------------------
+ * 8. API Route Mounting
+ * --------------------------------------------------------------------------
+ */
+const apiPrefix = '/api/v1';
 
-// Global 404 Handler
-app.use((req, res, _next) => {
-  res.status(404).json({
-    status: 'fail',
-    message: `Cannot find ${req.originalUrl} on this server`,
-  });
-});
+app.use(`${apiPrefix}/auth`, authRoutes);
 
-// Global Error Handler
-app.use((err, req, res, _next) => {
-  const statusCode = err.statusCode || 500;
-  logger.error(err.stack || err.message);
+/**
+ * --------------------------------------------------------------------------
+ * 9. 404 Not Found Handler
+ * --------------------------------------------------------------------------
+ */
+app.use(notFound);
 
-  res.status(statusCode).json({
-    status: 'error',
-    message:
-      config.env === 'production' && statusCode === 500 ? 'Internal Server Error' : err.message,
-    ...(config.env === 'development' && { stack: err.stack }),
-  });
-});
+/**
+ * --------------------------------------------------------------------------
+ * 10. Global Centralized Error Handler
+ * --------------------------------------------------------------------------
+ */
+app.use(errorHandler);
 
-module.exports = app;
+export default app;

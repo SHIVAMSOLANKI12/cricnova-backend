@@ -1,7 +1,7 @@
 {
   "name": "cricnova-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "CricNova Enterprise Backend Engine",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.js",
@@ -12,7 +12,11 @@
     "prepare": "husky",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "lint-staged": {
     "*.js": [
@@ -26,7 +30,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
@@ -44,6 +48,7 @@
     "redis": "^6.2.0",
     "socket.io": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
+    "ua-parser-js": "^2.0.10",
     "uuid": "^14.0.1",
     "winston": "^3.19.0",
     "yamljs": "^0.3.0",

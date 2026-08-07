@@ -7,3 +7,342 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ==========================================
+// Identity Domain Enums
+// ==========================================
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+
+  @@map("user_status")
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+
+  @@map("session_status")
+}
+
+enum LoginMethod {
+  PHONE_OTP
+  WHATSAPP_OTP
+  EMAIL_PASSWORD
+  GOOGLE_OAUTH
+  APPLE_OAUTH
+
+  @@map("login_method")
+}
+
+enum OTPTargetType {
+  PHONE
+  EMAIL
+
+  @@map("otp_target_type")
+}
+
+enum OTPPurpose {
+  LOGIN
+  REGISTER
+  VERIFY_PHONE
+  VERIFY_EMAIL
+  RESET_PASSWORD
+  CHANGE_PHONE
+  CHANGE_EMAIL
+  TWO_FACTOR_AUTH
+
+  @@map("otp_purpose")
+}
+
+enum OTPStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  FAILED
+
+  @@map("otp_status")
+}
+
+// ==========================================
+// Identity Domain Models
+// ==========================================
+
+model User {
+  // Identity Fields
+  id        String  @id @default(uuid()) @map("id") @db.Uuid
+  firstName String  @map("first_name") @db.VarChar(100)
+  lastName  String? @map("last_name") @db.VarChar(100)
+  username  String? @unique(map: "uq_users_username") @map("username") @db.VarChar(50)
+
+  // Authentication Fields
+  phone        String  @unique(map: "uq_users_phone") @map("phone") @db.VarChar(20)
+  email        String? @unique(map: "uq_users_email") @map("email") @db.VarChar(255)
+  passwordHash String? @map("password_hash") @db.VarChar(255)
+
+  // Verification Fields
+  phoneVerified Boolean @default(false) @map("phone_verified")
+  emailVerified Boolean @default(false) @map("email_verified")
+
+  // Public Profile
+  profileImageUrl String? @map("profile_image_url") @db.Text
+
+  // Account Fields
+  status      UserStatus @default(PENDING) @map("status")
+  lastLoginAt DateTime?  @map("last_login_at") @db.Timestamptz(6)
+
+  // Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  sessions         Session[]
+  refreshTokens    RefreshToken[]
+  otpVerifications OTPVerification[]
+  userRoles        UserRole[]
+
+  // Indexes
+  @@index([phone], map: "idx_users_phone")
+  @@index([email], map: "idx_users_email")
+  @@index([username], map: "idx_users_username")
+  @@index([status], map: "idx_users_status")
+  @@index([createdAt(sort: Desc)], map: "idx_users_created_at")
+  // Table Mapping
+  @@map("users")
+}
+
+model Session {
+  // Identity & User Link
+  id     String @id @default(uuid()) @map("id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Device Metadata
+  deviceId   String? @map("device_id") @db.VarChar(255)
+  deviceName String? @map("device_name") @db.VarChar(100)
+  platform   String? @map("platform") @db.VarChar(50)
+  appVersion String? @map("app_version") @db.VarChar(50)
+
+  // Network & Security Metadata
+  ipAddress String? @map("ip_address") @db.VarChar(45)
+  userAgent String? @map("user_agent") @db.Text
+
+  // Authentication & State
+  loginMethod LoginMethod   @default(PHONE_OTP) @map("login_method")
+  status      SessionStatus @default(ACTIVE) @map("status")
+
+  // Lifecycle Timestamps
+  lastActivityAt DateTime  @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  // Audit Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  refreshTokens RefreshToken[]
+
+  // Indexes
+  @@index([userId], map: "idx_sessions_user_id")
+  @@index([status], map: "idx_sessions_status")
+  @@index([expiresAt], map: "idx_sessions_expires_at")
+  @@index([loginMethod], map: "idx_sessions_login_method")
+  // Table Mapping
+  @@map("sessions")
+}
+
+model RefreshToken {
+  // Identity & Links
+  id        String  @id @default(uuid()) @map("id") @db.Uuid
+  userId    String  @map("user_id") @db.Uuid
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String  @map("session_id") @db.Uuid
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Security Token Hash
+  tokenHash String @unique(map: "uq_refresh_tokens_token_hash") @map("token_hash") @db.VarChar(255)
+
+  // Refresh Token Rotation Chain
+  replacedByTokenId String?        @map("replaced_by_token_id") @db.Uuid
+  replacedByToken   RefreshToken?  @relation("RefreshTokenRotation", fields: [replacedByTokenId], references: [id], onDelete: SetNull)
+  replacesTokens    RefreshToken[] @relation("RefreshTokenRotation")
+
+  // Lifecycle Timestamps
+  issuedAt  DateTime  @default(now()) @map("issued_at") @db.Timestamptz(6)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  // Audit Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Indexes
+  @@index([userId], map: "idx_refresh_tokens_user_id")
+  @@index([sessionId], map: "idx_refresh_tokens_session_id")
+  @@index([expiresAt], map: "idx_refresh_tokens_expires_at")
+  @@index([revokedAt], map: "idx_refresh_tokens_revoked_at")
+  // Table Mapping
+  @@map("refresh_tokens")
+}
+
+model OTPVerification {
+  // Identity & Links
+  id     String  @id @default(uuid()) @map("id") @db.Uuid
+  userId String? @map("user_id") @db.Uuid
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Verification Target & Purpose
+  target     String        @map("target") @db.VarChar(255)
+  targetType OTPTargetType @map("target_type")
+  purpose    OTPPurpose    @map("purpose")
+
+  // Security Payload
+  otpHash String @map("otp_hash") @db.VarChar(255)
+
+  // Attempt Tracking & Rate Limiting
+  attemptCount Int @default(0) @map("attempt_count")
+  maxAttempts  Int @default(3) @map("max_attempts")
+
+  // State & Lifecycle
+  status     OTPStatus @default(PENDING) @map("status")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+
+  // Audit Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Indexes
+  @@index([target, targetType, purpose, status], map: "idx_otp_target_lookup")
+  @@index([userId], map: "idx_otp_user_id")
+  @@index([expiresAt], map: "idx_otp_expires_at")
+  @@index([status], map: "idx_otp_status")
+  // Table Mapping
+  @@map("otp_verifications")
+}
+
+model Role {
+  // Identity & Definition
+  id   String @id @default(uuid()) @map("id") @db.Uuid
+  name String @unique(map: "uq_roles_name") @map("name") @db.VarChar(50)
+
+  // Presentation & Metadata
+  displayName String  @map("display_name") @db.VarChar(100)
+  description String? @map("description") @db.Text
+
+  // Protection & Lifecycle Flags
+  isSystem Boolean @default(false) @map("is_system")
+  isActive Boolean @default(true) @map("is_active")
+
+  // Audit Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  // Indexes
+  @@index([name], map: "idx_roles_name")
+  @@index([isActive], map: "idx_roles_is_active")
+  @@index([isSystem], map: "idx_roles_is_system")
+  // Table Mapping
+  @@map("roles")
+}
+
+model Permission {
+  // Identity & Definition
+  id   String @id @default(uuid()) @map("id") @db.Uuid
+  name String @unique(map: "uq_permissions_name") @map("name") @db.VarChar(100)
+
+  // Classification
+  module String @map("module") @db.VarChar(50)
+  action String @map("action") @db.VarChar(50)
+
+  // Presentation & Metadata
+  description String? @map("description") @db.Text
+
+  // Protection & Lifecycle Flags
+  isSystem Boolean @default(false) @map("is_system")
+  isActive Boolean @default(true) @map("is_active")
+
+  // Audit Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  // Indexes
+  @@index([name], map: "idx_permissions_name")
+  @@index([module], map: "idx_permissions_module")
+  @@index([action], map: "idx_permissions_action")
+  @@index([module, action], map: "idx_permissions_module_action")
+  @@index([isActive], map: "idx_permissions_is_active")
+  // Table Mapping
+  @@map("permissions")
+}
+
+model UserRole {
+  // Identity & Links
+  id     String @id @default(uuid()) @map("id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String @map("role_id") @db.Uuid
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  // Assignment Metadata
+  assignedAt DateTime  @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  assignedBy String?   @map("assigned_by") @db.Uuid
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  // Lifecycle & State Flags
+  isActive Boolean @default(true) @map("is_active")
+
+  // Audit Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Constraints & Indexes
+  @@unique([userId, roleId], map: "uq_user_roles_user_role")
+  @@index([userId], map: "idx_user_roles_user_id")
+  @@index([roleId], map: "idx_user_roles_role_id")
+  @@index([isActive], map: "idx_user_roles_is_active")
+  @@index([expiresAt], map: "idx_user_roles_expires_at")
+  // Table Mapping
+  @@map("user_roles")
+}
+
+model RolePermission {
+  // Identity & Links
+  id           String     @id @default(uuid()) @map("id") @db.Uuid
+  roleId       String     @map("role_id") @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String     @map("permission_id") @db.Uuid
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  // Assignment Metadata
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  assignedBy String?  @map("assigned_by") @db.Uuid
+
+  // Lifecycle & State Flags
+  isActive Boolean @default(true) @map("is_active")
+
+  // Audit Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Constraints & Indexes
+  @@unique([roleId, permissionId], map: "uq_role_permissions_role_permission")
+  @@index([roleId], map: "idx_role_permissions_role_id")
+  @@index([permissionId], map: "idx_role_permissions_permission_id")
+  @@index([isActive], map: "idx_role_permissions_is_active")
+  // Table Mapping
+  @@map("role_permissions")
+}

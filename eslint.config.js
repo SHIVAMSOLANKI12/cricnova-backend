@@ -1,31 +1,42 @@
-const js = require('@eslint/js');
-const prettier = require('eslint-config-prettier');
+import js from '@eslint/js';
+import prettier from 'eslint-config-prettier';
 
-module.exports = [
+export default [
   js.configs.recommended,
   prettier,
   {
     languageOptions: {
       ecmaVersion: 'latest',
-      sourceType: 'commonjs',
+      sourceType: 'module',
       globals: {
         node: true,
         process: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        require: 'readonly',
-        module: 'readonly',
-        exports: 'readonly',
+        Buffer: 'readonly',
         console: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        jest: 'readonly',
       },
     },
     rules: {
       'no-console': 'warn',
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrors: 'none',
+        },
+      ],
       'prefer-const': 'error',
       'no-var': 'error',
       eqeqeq: ['error', 'always'],
@@ -33,6 +44,6 @@ module.exports = [
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', 'coverage/**', 'logs/**'],
+    ignores: ['node_modules/**', 'dist/**', 'coverage/**', 'logs/**', 'prisma/seed.js'],
   },
 ];
