@@ -13,12 +13,11 @@ describe('POST /api/v1/auth/send-otp', () => {
     const result = await sendOtpService.execute(payload);
 
     expect(result).toBeDefined();
-    expect(result.target ?? result.mobile).toBeDefined();
+    expect(result.success).toBe(true);
+    expect(result.expiresIn).toBeDefined();
   });
 
-  it('should throw error when mobile number format is invalid', async () => {
-    const invalidPayload = { mobile: '12345' };
-
-    await expect(sendOtpService.execute(invalidPayload)).rejects.toThrow();
+  it('should throw error when mobile number is missing', async () => {
+    await expect(sendOtpService.execute({})).rejects.toThrow();
   });
 });

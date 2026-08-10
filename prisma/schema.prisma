@@ -68,16 +68,42 @@ enum OTPStatus {
   @@map("otp_status")
 }
 
+/**
+ * -------------------------------------------------------------------------
+ * Gender
+ * -------------------------------------------------------------------------
+ */
+enum Gender {
+  MALE
+  FEMALE
+  PREFER_NOT_TO_SAY
+
+  @@map("gender")
+}
+
 // ==========================================
 // Identity Domain Models
 // ==========================================
 
 model User {
   // Identity Fields
-  id        String  @id @default(uuid()) @map("id") @db.Uuid
-  firstName String  @map("first_name") @db.VarChar(100)
-  lastName  String? @map("last_name") @db.VarChar(100)
-  username  String? @unique(map: "uq_users_username") @map("username") @db.VarChar(50)
+  id       String  @id @default(uuid()) @map("id") @db.Uuid
+
+  /**
+   * -------------------------------------------------------------------------
+   * Profile Information
+   * -------------------------------------------------------------------------
+   */
+  firstName         String?   @map("first_name") @db.VarChar(100)
+  lastName          String?   @map("last_name") @db.VarChar(100)
+  username          String?   @unique(map: "uq_users_username") @map("username") @db.VarChar(50)
+  gender            Gender?   @map("gender")
+  city              String?   @map("city") @db.VarChar(100)
+  profileImageUrl   String?   @map("profile_image_url") @db.Text
+  avatarId          String?   @map("avatar_id") @db.VarChar(100)
+  dateOfBirth       DateTime? @map("date_of_birth") @db.Date
+  preferredLanguage String?   @map("preferred_language") @db.VarChar(20)
+  profileCompleted  Boolean   @default(false) @map("profile_completed")
 
   // Authentication Fields
   phone        String  @unique(map: "uq_users_phone") @map("phone") @db.VarChar(20)
@@ -87,9 +113,6 @@ model User {
   // Verification Fields
   phoneVerified Boolean @default(false) @map("phone_verified")
   emailVerified Boolean @default(false) @map("email_verified")
-
-  // Public Profile
-  profileImageUrl String? @map("profile_image_url") @db.Text
 
   // Account Fields
   status      UserStatus @default(PENDING) @map("status")
@@ -111,6 +134,9 @@ model User {
   @@index([email], map: "idx_users_email")
   @@index([username], map: "idx_users_username")
   @@index([status], map: "idx_users_status")
+  @@index([city], map: "idx_users_city")
+  @@index([gender], map: "idx_users_gender")
+  @@index([profileCompleted], map: "idx_users_profile_completed")
   @@index([createdAt(sort: Desc)], map: "idx_users_created_at")
   // Table Mapping
   @@map("users")

@@ -34,6 +34,7 @@ import errorHandler from './common/middleware/error-handler.js';
 
 // Routes Imports
 import authRoutes from './modules/auth/routes/auth.routes.js';
+import userRoutes from './modules/user/routes/user.routes.js';
 
 const app = express();
 
@@ -132,6 +133,7 @@ app.get('/health', (req, res) => {
 const apiPrefix = '/api/v1';
 
 app.use(`${apiPrefix}/auth`, authRoutes);
+app.use(`${apiPrefix}/users`, userRoutes);
 
 /**
  * --------------------------------------------------------------------------
