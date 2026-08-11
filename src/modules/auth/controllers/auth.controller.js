@@ -51,12 +51,7 @@ class AuthController {
       mobile: req.body.mobile,
     });
 
-    return res.status(200).json(
-      ApiResponse.success({
-        message: 'OTP sent successfully.',
-        data: result,
-      })
-    );
+    return res.status(200).json(ApiResponse.success('OTP sent successfully.', result));
   });
 
   /**
@@ -76,14 +71,11 @@ class AuthController {
     CookieProvider.setRefreshToken(res, result.refreshToken);
 
     return res.status(200).json(
-      ApiResponse.success({
-        message: 'Authentication successful.',
-        data: {
-          isNewUser: result.isNewUser,
-          accessToken: result.accessToken,
-          user: result.user,
-          roles: result.roles,
-        },
+      ApiResponse.success('Authentication successful.', {
+        isNewUser: result.isNewUser,
+        accessToken: result.accessToken,
+        user: result.user,
+        roles: result.roles,
       })
     );
   });
@@ -101,12 +93,9 @@ class AuthController {
     CookieProvider.setRefreshToken(res, result.refreshToken);
 
     return res.status(200).json(
-      ApiResponse.success({
-        message: 'Access token refreshed successfully.',
-        data: {
-          accessToken: result.accessToken,
-          roles: result.roles,
-        },
+      ApiResponse.success('Access token refreshed successfully.', {
+        accessToken: result.accessToken,
+        roles: result.roles,
       })
     );
   });
@@ -123,11 +112,7 @@ class AuthController {
 
     CookieProvider.clearAuthCookies(res);
 
-    return res.status(200).json(
-      ApiResponse.success({
-        message: result.message ?? 'Logged out successfully.',
-      })
-    );
+    return res.status(200).json(ApiResponse.success(result.message ?? 'Logged out successfully.'));
   });
 
   /**
@@ -142,11 +127,9 @@ class AuthController {
 
     CookieProvider.clearAuthCookies(res);
 
-    return res.status(200).json(
-      ApiResponse.success({
-        message: result.message ?? 'Logged out from all devices successfully.',
-      })
-    );
+    return res
+      .status(200)
+      .json(ApiResponse.success(result.message ?? 'Logged out from all devices successfully.'));
   });
 
   /**
@@ -159,12 +142,7 @@ class AuthController {
 
     const result = await getCurrentUserService.execute(userId);
 
-    return res.status(200).json(
-      ApiResponse.success({
-        message: 'User profile fetched successfully.',
-        data: result,
-      })
-    );
+    return res.status(200).json(ApiResponse.success('User profile fetched successfully.', result));
   });
 }
 

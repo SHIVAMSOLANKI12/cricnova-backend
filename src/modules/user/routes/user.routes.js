@@ -27,6 +27,7 @@ import requireAuth from '../../auth/middlewares/require-auth.middleware.js';
 import validate from '../../../common/middleware/validate-request.js';
 
 import { updateProfileSchema } from '../validations/user-profile.validation.js';
+import updateAvatarSchema from '../validations/avatar.validation.js';
 
 const router = Router();
 
@@ -61,5 +62,28 @@ router.patch(
   validate(updateProfileSchema),
   userController.updateProfile
 );
+
+/**
+ * -----------------------------------------------------------------------------
+ * Avatar Update Route
+ * -----------------------------------------------------------------------------
+ *
+ * PATCH /api/v1/users/me/avatar
+ *
+ * Flow:
+ * requireAuth
+ *      ↓
+ * Zod validation
+ *      ↓
+ * UserController.updateAvatar
+ *
+ * NOTE:
+ * - Authentication is mandatory.
+ * - Validation happens before controller execution.
+ * - Controller contains no business logic.
+ * -----------------------------------------------------------------------------
+ */
+
+router.patch('/me/avatar', requireAuth, validate(updateAvatarSchema), userController.updateAvatar);
 
 export default router;

@@ -198,6 +198,21 @@ const userSwagger = {
       },
     },
 
+    UpdateAvatarRequest: {
+      type: 'object',
+      required: ['avatarId'],
+      additionalProperties: false,
+      properties: {
+        avatarId: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 100,
+          example: 'batsman_blue_01',
+          description: 'Identifier of an active cricket avatar.',
+        },
+      },
+    },
+
     SuccessResponse: {
       type: 'object',
       properties: {
@@ -397,6 +412,125 @@ const userSwagger = {
 
           404: {
             description: 'User profile not found.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    '/api/v1/users/me/avatar': {
+      patch: {
+        tags: ['User Profile'],
+
+        summary: "Update current user's avatar",
+
+        description:
+          "Updates the authenticated user's cricket avatar. The selected avatar must be an active avatar supported by the system. The profile completion status is calculated server-side.",
+
+        security: [
+          {
+            bearerAuth: [],
+          },
+        ],
+
+        requestBody: {
+          required: true,
+
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/UpdateAvatarRequest',
+              },
+
+              example: {
+                avatarId: 'batsman_blue_01',
+              },
+            },
+          },
+        },
+
+        responses: {
+          200: {
+            description: 'Avatar updated successfully.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/SuccessResponse',
+                },
+              },
+            },
+          },
+
+          400: {
+            description: 'Invalid request or unavailable avatar.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          401: {
+            description: 'Authentication required or access token invalid.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          403: {
+            description: 'User account is inactive or suspended.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          404: {
+            description: 'User profile not found.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          429: {
+            description: 'Too many requests.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          500: {
+            description: 'Internal server error.',
 
             content: {
               'application/json': {
