@@ -28,6 +28,7 @@ import validate from '../../../common/middleware/validate-request.js';
 
 import { updateProfileSchema } from '../validations/user-profile.validation.js';
 import updateAvatarSchema from '../validations/avatar.validation.js';
+import { profilePhotoUpload } from '../../../common/middleware/upload.middleware.js';
 
 const router = Router();
 
@@ -85,5 +86,20 @@ router.patch(
  */
 
 router.patch('/me/avatar', requireAuth, validate(updateAvatarSchema), userController.updateAvatar);
+
+/**
+ * -----------------------------------------------------------------------------
+ * Update Profile Photo
+ * -----------------------------------------------------------------------------
+ *
+ * PUT /api/v1/users/me/photo
+ *
+ * Supports:
+ * - Gallery image
+ * - Camera / selfie image
+ *
+ * Unified multipart upload contract.
+ */
+router.put('/me/photo', requireAuth, profilePhotoUpload, userController.updatePhoto);
 
 export default router;

@@ -17,12 +17,16 @@
  * -----------------------------------------------------------------------------
  */
 
+import { z } from 'zod';
+
 import AppError from '../../../common/errors/app-error.js';
 import ErrorCodes from '../../../common/errors/error-codes.js';
 import ErrorMessages from '../../../common/errors/error-messages.js';
 
 import userProfileRepository from '../repositories/user-profile.repository.js';
 import UserProfileMapper from '../mappers/user-profile.mapper.js';
+
+const userIdSchema = z.string().uuid();
 
 class GetProfileService {
   /**
@@ -51,10 +55,27 @@ class GetProfileService {
 
     /**
      * -------------------------------------------------------------------------
-     * Step 2: Load User Profile
+     * Step 2: Validate UUID Format
      * -------------------------------------------------------------------------
      */
-    const user = await userProfileRepository.findProfileByUserId(userId);
+    const parsed = userIdSchema.safeParse(userId);
+
+    if (!parsed.success) {
+      throw new AppError({
+        message: 'Invalid user ID.',
+
+        code: 'INVALID_USER_ID',
+
+        statusCode: 400,
+      });
+    }
+
+    /**
+     * -------------------------------------------------------------------------
+     * Step 3: Load User Profile
+     * -------------------------------------------------------------------------
+     */
+    const user = await userProfileRepository.findProfileByUserId(parsed.data);
 
     /**
      * -------------------------------------------------------------------------

@@ -1,16 +1,40 @@
-const { createClient } = require('redis');
-const config = require('../../config');
-const logger = require('../logger');
+/**
+ * -----------------------------------------------------------------------------
+ * File: core/redis/index.js
+ * Description:
+ * Centralized Redis Client
+ * -----------------------------------------------------------------------------
+ */
+
+import { createClient } from 'redis';
+
+import config from '../../config/index.js';
+import logger from '../logger/index.js';
 
 const redisClient = createClient({
   socket: {
     host: config.redis.host,
     port: config.redis.port,
   },
+
   password: config.redis.password,
 });
 
-redisClient.on('error', (err) => logger.error('Redis Client Error:', err));
-redisClient.on('connect', () => logger.info('Redis Client Connected'));
+/**
+ * Redis Error Handler
+ */
+redisClient.on('error', (error) => {
+  logger.error('Redis client error.', {
+    error: error?.message ?? error,
+    stack: error?.stack,
+  });
+});
 
-module.exports = redisClient;
+/**
+ * Redis Connection Handler
+ */
+redisClient.on('connect', () => {
+  logger.info('Redis client connected.');
+});
+
+export default redisClient;

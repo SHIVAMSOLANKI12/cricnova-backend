@@ -101,7 +101,7 @@ class OTPVerificationRepository extends BaseRepository {
       },
 
       data: {
-        attempts: {
+        attemptCount: {
           increment: 1,
         },
       },

@@ -1,44 +1,62 @@
-const dotenv = require('dotenv');
-const path = require('path');
+/**
+ * -----------------------------------------------------------------------------
+ * File: config/index.js
+ * Description:
+ * Centralized application configuration.
+ *
+ * NOTE:
+ * - Environment variables are loaded/validated by env.js.
+ * - This file provides the application's legacy config contract.
+ * - Secrets are never exposed to frontend responses.
+ * -----------------------------------------------------------------------------
+ */
 
-// Load environment variables from .env file
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+import env from './env.js';
 
 const config = Object.freeze({
-  env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT, 10) || 5000,
-  apiPrefix: process.env.API_PREFIX || '/api/v1',
+  env: env.NODE_ENV,
+
+  port: env.PORT,
+
+  apiPrefix: env.API_PREFIX ?? '/api/v1',
 
   db: {
-    url: process.env.DATABASE_URL,
+    url: env.DATABASE_URL,
   },
 
   redis: {
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
+    host: env.REDIS_HOST ?? '127.0.0.1',
+
+    port: env.REDIS_PORT ?? 6379,
+
+    password: env.REDIS_PASSWORD || undefined,
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET,
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    refreshSecret: process.env.JWT_REFRESH_SECRET,
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+    secret: env.JWT_ACCESS_SECRET,
+
+    expiresIn: env.JWT_ACCESS_EXPIRES_IN ?? '7d',
+
+    refreshSecret: env.JWT_REFRESH_SECRET,
+
+    refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN ?? '30d',
   },
 
   cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    apiSecret: process.env.CLOUDINARY_API_SECRET,
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+
+    apiKey: env.CLOUDINARY_API_KEY,
+
+    apiSecret: env.CLOUDINARY_API_SECRET,
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: env.CORS_ORIGIN ?? '*',
   },
 
   logging: {
-    level: process.env.LOG_LEVEL || 'info',
+    level: env.LOG_LEVEL ?? 'info',
   },
 });
 
-module.exports = config;
+export default config;

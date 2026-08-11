@@ -11,6 +11,7 @@
  */
 
 import prisma from '../core/database/prisma.client.js';
+import logger from '../core/logger/index.js';
 
 export async function runSessionCleanupJob() {
   try {
@@ -42,7 +43,10 @@ export async function runSessionCleanupJob() {
       timestamp: now.toISOString(),
     };
   } catch (error) {
-    console.error('[JOB] Error executing session cleanup job:', error);
+    logger.error('Error executing session cleanup job:', {
+      error: error?.message ?? error,
+      stack: error?.stack,
+    });
     throw error;
   }
 }

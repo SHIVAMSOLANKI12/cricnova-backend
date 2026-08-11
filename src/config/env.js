@@ -53,6 +53,22 @@ const envSchema = z.object({
   OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().positive().default(30),
 
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']).default('info'),
+
+  API_PREFIX: z.string().trim().default('/api/v1'),
+
+  REDIS_HOST: z.string().trim().default('127.0.0.1'),
+
+  REDIS_PORT: z.coerce.number().int().positive().default(6379),
+
+  REDIS_PASSWORD: z.string().optional(),
+
+  CORS_ORIGIN: z.string().trim().default('*'),
+
+  CLOUDINARY_CLOUD_NAME: z.string().trim().min(1).optional(),
+
+  CLOUDINARY_API_KEY: z.string().trim().min(1).optional(),
+
+  CLOUDINARY_API_SECRET: z.string().trim().min(1).optional(),
 });
 
 /**
@@ -64,6 +80,7 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
+  /* eslint-disable no-console */
   console.error('\n❌ Invalid Environment Configuration\n');
 
   parsed.error.issues.forEach((issue) => {
@@ -71,6 +88,7 @@ if (!parsed.success) {
   });
 
   console.error('\nApplication startup aborted.\n');
+  /* eslint-enable no-console */
 
   process.exit(1);
 }
@@ -82,5 +100,32 @@ if (!parsed.success) {
  */
 
 const env = Object.freeze(parsed.data);
+
+/**
+ * -----------------------------------------------------------------------------
+ * Production Cloudinary Requirement
+ * -----------------------------------------------------------------------------
+ *
+ * Cloudinary credentials are mandatory in production.
+ * This prevents application startup if media storage is unconfigured.
+ */
+if (env.NODE_ENV === 'production') {
+  const missingCloudinaryVariables = [
+    ['CLOUDINARY_CLOUD_NAME', env.CLOUDINARY_CLOUD_NAME],
+    ['CLOUDINARY_API_KEY', env.CLOUDINARY_API_KEY],
+    ['CLOUDINARY_API_SECRET', env.CLOUDINARY_API_SECRET],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  if (missingCloudinaryVariables.length > 0) {
+    /* eslint-disable no-console */
+    console.error('\n❌ Missing required production Cloudinary configuration:');
+    console.error(missingCloudinaryVariables.join(', '));
+    console.error('\nApplication startup aborted.\n');
+    /* eslint-enable no-console */
+    process.exit(1);
+  }
+}
 
 export default env;

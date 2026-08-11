@@ -24,6 +24,7 @@ import ApiResponse from '../../../common/response/api-response.js';
 import getProfileService from '../services/get-profile.service.js';
 import updateProfileService from '../services/update-profile.service.js';
 import updateAvatarService from '../services/update-avatar.service.js';
+import updatePhotoService from '../services/update-photo.service.js';
 
 class UserController {
   /**
@@ -76,6 +77,24 @@ class UserController {
     });
 
     return res.status(200).json(ApiResponse.success('Avatar updated successfully.', user));
+  });
+
+  /**
+   * ---------------------------------------------------------------------------
+   * Update Profile Photo
+   * ---------------------------------------------------------------------------
+   *
+   * PUT /api/v1/users/me/photo
+   */
+  updatePhoto = asyncHandler(async (req, res) => {
+    const userId = req.user?.id;
+
+    const user = await updatePhotoService.execute({
+      userId,
+      file: req.file,
+    });
+
+    return res.status(200).json(ApiResponse.success('Profile photo updated successfully.', user));
   });
 }
 

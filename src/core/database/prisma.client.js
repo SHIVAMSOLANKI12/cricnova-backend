@@ -18,6 +18,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import env from '../../config/env.js';
+import logger from '../logger/index.js';
 
 const globalForPrisma = globalThis;
 
@@ -56,7 +57,7 @@ const prisma =
  */
 if (env.NODE_ENV === 'development') {
   prisma.$on('query', (event) => {
-    console.log(`[Prisma Query] ${event.duration}ms | ${event.query}`);
+    logger.debug(`[Prisma Query] ${event.duration}ms | ${event.query}`);
   });
 }
 
@@ -72,15 +73,18 @@ if (env.NODE_ENV !== 'production') {
  */
 const shutdown = async (signal) => {
   try {
-    console.info(`Received ${signal}. Closing Prisma connection...`);
+    logger.info(`Received ${signal}. Closing Prisma connection...`);
 
     await prisma.$disconnect();
 
-    console.info('Prisma disconnected successfully.');
+    logger.info('Prisma disconnected successfully.');
 
     process.exit(0);
   } catch (error) {
-    console.error('Error while disconnecting Prisma:', error);
+    logger.error('Error while disconnecting Prisma:', {
+      error: error?.message ?? error,
+      stack: error?.stack,
+    });
 
     process.exit(1);
   }

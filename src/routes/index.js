@@ -1,7 +1,31 @@
-const express = require('express');
+/**
+ * -----------------------------------------------------------------------------
+ * File: routes/index.js
+ * Description:
+ * Root API Router
+ * -----------------------------------------------------------------------------
+ */
+
+import express from 'express';
+
 const router = express.Router();
 
-// Mount feature routers here as modules are developed
-// Example: router.use('/auth', authRouter);
+/**
+ * -----------------------------------------------------------------------------
+ * Feature Routers
+ * -----------------------------------------------------------------------------
+ *
+ * Feature modules are mounted here as they become available.
+ *
+ * Example:
+ *
+ * import authRouter from "../modules/auth/routes/auth.routes.js";
+ *
+ * router.use(
+ *   "/auth",
+ *   authRouter
+ * );
+ * -----------------------------------------------------------------------------
+ */
 
-module.exports = router;
+export default router;

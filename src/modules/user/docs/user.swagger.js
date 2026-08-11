@@ -213,6 +213,19 @@ const userSwagger = {
       },
     },
 
+    UpdateProfilePhotoRequest: {
+      type: 'object',
+      required: ['photo'],
+      additionalProperties: false,
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
+          description: 'JPEG, PNG, or WebP image. Maximum size: 5 MB.',
+        },
+      },
+    },
+
     SuccessResponse: {
       type: 'object',
       properties: {
@@ -531,6 +544,109 @@ const userSwagger = {
 
           500: {
             description: 'Internal server error.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    '/api/v1/users/me/photo': {
+      put: {
+        tags: ['User Profile'],
+
+        summary: "Update current user's profile photo",
+
+        description:
+          "Uploads or replaces the authenticated user's profile photo. Images can originate from the device gallery or camera. The backend treats both sources identically.",
+
+        security: [
+          {
+            bearerAuth: [],
+          },
+        ],
+
+        requestBody: {
+          required: true,
+
+          content: {
+            'multipart/form-data': {
+              schema: {
+                $ref: '#/components/schemas/UpdateProfilePhotoRequest',
+              },
+            },
+          },
+        },
+
+        responses: {
+          200: {
+            description: 'Profile photo updated successfully.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/SuccessResponse',
+                },
+              },
+            },
+          },
+
+          400: {
+            description: 'Invalid, missing, unsupported, or oversized image.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          401: {
+            description: 'Authentication required or access token invalid.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          403: {
+            description: 'User account is inactive or suspended.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          404: {
+            description: 'User profile not found.',
+
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+
+          502: {
+            description: 'Storage provider failure.',
 
             content: {
               'application/json': {

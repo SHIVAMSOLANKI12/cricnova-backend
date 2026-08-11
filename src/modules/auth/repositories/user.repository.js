@@ -39,11 +39,17 @@ class UserRepository extends BaseRepository {
    * -------------------------------------------------------------------------
    */
   async findByMobile(mobile, tx = null) {
+    if (typeof mobile !== 'string' || mobile.trim().length === 0) {
+      return null;
+    }
+
+    const normalizedMobile = mobile.trim();
+
     const client = tx ? tx.user : this.model;
 
     return client.findUnique({
       where: {
-        phone: mobile,
+        phone: normalizedMobile,
       },
     });
   }
