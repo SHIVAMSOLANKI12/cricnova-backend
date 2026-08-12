@@ -35,6 +35,7 @@ import errorHandler from './common/middleware/error-handler.js';
 // Routes Imports
 import authRoutes from './modules/auth/routes/auth.routes.js';
 import userRoutes from './modules/user/routes/user.routes.js';
+import playerProfileRoutes from './modules/player-profile/routes/player-profile.routes.js';
 
 const app = express();
 
@@ -134,6 +135,7 @@ const apiPrefix = '/api/v1';
 
 app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}/users`, userRoutes);
+app.use(`${apiPrefix}/users`, playerProfileRoutes);
 
 /**
  * --------------------------------------------------------------------------

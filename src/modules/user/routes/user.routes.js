@@ -60,7 +60,9 @@ router.get('/me', requireAuth, userController.getProfile);
 router.patch(
   '/me/profile',
   requireAuth,
-  validate(updateProfileSchema),
+  validate({
+    body: updateProfileSchema,
+  }),
   userController.updateProfile
 );
 
@@ -85,7 +87,14 @@ router.patch(
  * -----------------------------------------------------------------------------
  */
 
-router.patch('/me/avatar', requireAuth, validate(updateAvatarSchema), userController.updateAvatar);
+router.patch(
+  '/me/avatar',
+  requireAuth,
+  validate({
+    body: updateAvatarSchema,
+  }),
+  userController.updateAvatar
+);
 
 /**
  * -----------------------------------------------------------------------------

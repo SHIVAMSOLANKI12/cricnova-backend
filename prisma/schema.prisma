@@ -82,29 +82,63 @@ enum Gender {
 }
 
 // ==========================================
+// Cricket Player Profile Enums
+// ==========================================
+
+enum PlayingRole {
+  BATTER
+  BOWLER
+  ALL_ROUNDER
+  WICKET_KEEPER
+
+  @@map("playing_role")
+}
+
+enum BattingStyle {
+  RIGHT_HAND
+  LEFT_HAND
+
+  @@map("batting_style")
+}
+
+enum BowlingStyle {
+  RIGHT_ARM_FAST
+  LEFT_ARM_FAST
+  RIGHT_ARM_MEDIUM
+  LEFT_ARM_MEDIUM
+  RIGHT_ARM_OFF_SPIN
+  LEFT_ARM_ORTHODOX
+  RIGHT_ARM_LEG_SPIN
+  LEFT_ARM_CHINAMAN
+  NONE
+
+  @@map("bowling_style")
+}
+
+// ==========================================
 // Identity Domain Models
 // ==========================================
 
 model User {
   // Identity Fields
-  id       String  @id @default(uuid()) @map("id") @db.Uuid
+  id String @id @default(uuid()) @map("id") @db.Uuid
 
   /**
    * -------------------------------------------------------------------------
    * Profile Information
    * -------------------------------------------------------------------------
    */
-  firstName         String?   @map("first_name") @db.VarChar(100)
-  lastName          String?   @map("last_name") @db.VarChar(100)
-  username          String?   @unique(map: "uq_users_username") @map("username") @db.VarChar(50)
-  gender            Gender?   @map("gender")
-  city              String?   @map("city") @db.VarChar(100)
+  firstName            String?   @map("first_name") @db.VarChar(100)
+  lastName             String?   @map("last_name") @db.VarChar(100)
+  username             String?   @unique(map: "uq_users_username") @map("username") @db.VarChar(50)
+  gender               Gender?   @map("gender")
+  city                 String?   @map("city") @db.VarChar(100)
   profileImageUrl      String?   @map("profile_image_url") @db.Text
   profileImagePublicId String?   @map("profile_image_public_id") @db.Text
-  avatarId          String?   @map("avatar_id") @db.VarChar(100)
-  dateOfBirth       DateTime? @map("date_of_birth") @db.Date
-  preferredLanguage String?   @map("preferred_language") @db.VarChar(20)
-  profileCompleted  Boolean   @default(false) @map("profile_completed")
+  avatarId             String?   @map("avatar_id") @db.VarChar(100)
+  dateOfBirth          DateTime? @map("date_of_birth") @db.Date
+  preferredLanguage    String?   @map("preferred_language") @db.VarChar(20)
+  profileCompleted     Boolean   @default(false) @map("profile_completed")
 
   // Authentication Fields
   phone        String  @unique(map: "uq_users_phone") @map("phone") @db.VarChar(20)
@@ -129,6 +163,7 @@ model User {
   refreshTokens    RefreshToken[]
   otpVerifications OTPVerification[]
   userRoles        UserRole[]
+  playerProfile    PlayerProfile?
 
   // Indexes
   @@index([phone], map: "idx_users_phone")
@@ -141,6 +176,33 @@ model User {
   @@index([createdAt(sort: Desc)], map: "idx_users_created_at")
   // Table Mapping
   @@map("users")
+}
+
+model PlayerProfile {
+  id String @id @default(uuid()) @map("id") @db.Uuid
+
+  userId String @unique(map: "uq_player_profiles_user_id") @map("user_id") @db.Uuid
+
+  displayName String? @map("display_name") @db.VarChar(100)
+
+  playingRole PlayingRole? @map("playing_role")
+
+  battingStyle BattingStyle? @map("batting_style")
+
+  bowlingStyle BowlingStyle? @map("bowling_style")
+
+  bio String? @map("bio") @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([playingRole], map: "idx_player_profiles_playing_role")
+  @@index([battingStyle], map: "idx_player_profiles_batting_style")
+  @@index([bowlingStyle], map: "idx_player_profiles_bowling_style")
+  @@map("player_profiles")
 }
 
 model Session {
